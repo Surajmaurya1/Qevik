@@ -1,0 +1,18 @@
+.result-list {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(var(--row-height) * 8);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-primary);
+}
+
+.result-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  color: var(--text-muted);
+  font-size: 14px;
+  background-color: var(--bg-primary);
+}

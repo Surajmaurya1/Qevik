@@ -1,0 +1,22 @@
+.launcher-window {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100vw;
+  height: 100vh;
+  padding-top: 6px;
+}
+
+.launcher-card {
+  width: var(--window-width);
+  max-width: calc(100vw - 16px);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--window-radius);
+  box-shadow:
+    0 16px 36px var(--shadow),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
