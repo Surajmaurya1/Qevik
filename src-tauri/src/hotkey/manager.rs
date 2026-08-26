@@ -1,9 +1,9 @@
 use crate::error::{AppError, AppResult};
 use crate::hotkey::shortcuts::{validate_shortcut, DEFAULT_SHORTCUT};
 use crate::windows::window::toggle_launcher;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 pub struct HotkeyManager;
 
@@ -17,9 +17,9 @@ impl HotkeyManager {
     pub fn register(app: &AppHandle, shortcut_str: &str) -> AppResult<()> {
         validate_shortcut(shortcut_str)?;
 
-        let shortcut: Shortcut = shortcut_str
-            .parse()
-            .map_err(|e| AppError::Hotkey(format!("Invalid shortcut format '{}': {}", shortcut_str, e)))?;
+        let shortcut: Shortcut = shortcut_str.parse().map_err(|e| {
+            AppError::Hotkey(format!("Invalid shortcut format '{}': {}", shortcut_str, e))
+        })?;
 
         let app_handle = app.clone();
         let plugin = app.global_shortcut();
@@ -49,6 +49,7 @@ impl HotkeyManager {
     }
 
     /// Change hotkey to a new combination.
+    #[allow(dead_code)]
     pub fn update(app: &AppHandle, old_shortcut: &str, new_shortcut: &str) -> AppResult<()> {
         validate_shortcut(new_shortcut)?;
 

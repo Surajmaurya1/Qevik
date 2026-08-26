@@ -80,7 +80,13 @@ pub fn search_files_fts(
     query: &str,
     limit: usize,
 ) -> AppResult<Vec<FileRecord>> {
-    let like_pattern = format!("%{}%", query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
+    let like_pattern = format!(
+        "%{}%",
+        query
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    );
     let fts_query = crate::database::apps::build_fts_query(query);
 
     let mut results = Vec::new();
@@ -212,10 +218,10 @@ pub fn get_file_by_id_or_path(
     }
 }
 
+#[allow(dead_code)]
 pub fn count_files(conn: &Connection) -> AppResult<usize> {
     let count: usize = conn
         .query_row("SELECT COUNT(*) FROM files;", [], |r| r.get(0))
         .map_err(|e| AppError::Database(format!("Count files error: {}", e)))?;
     Ok(count)
 }
-

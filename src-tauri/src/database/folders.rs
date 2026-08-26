@@ -53,7 +53,13 @@ pub fn search_folders_fts(
     query: &str,
     limit: usize,
 ) -> AppResult<Vec<FolderRecord>> {
-    let like_pattern = format!("%{}%", query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
+    let like_pattern = format!(
+        "%{}%",
+        query
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    );
     let fts_query = crate::database::apps::build_fts_query(query);
 
     let mut results = Vec::new();
@@ -149,10 +155,10 @@ pub fn get_folder_by_id_or_path(
     }
 }
 
+#[allow(dead_code)]
 pub fn count_folders(conn: &Connection) -> AppResult<usize> {
     let count: usize = conn
         .query_row("SELECT COUNT(*) FROM folders;", [], |r| r.get(0))
         .map_err(|e| AppError::Database(format!("Count folders error: {}", e)))?;
     Ok(count)
 }
-

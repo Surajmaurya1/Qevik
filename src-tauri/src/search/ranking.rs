@@ -22,7 +22,8 @@ impl Ranker {
         let mut scored: Vec<SearchResult> = candidates
             .into_iter()
             .map(|c| {
-                let (mut text_relevance, mut match_bonus) = Self::compute_text_score(&c.display_name, &q_lower);
+                let (mut text_relevance, mut match_bonus) =
+                    Self::compute_text_score(&c.display_name, &q_lower);
                 if !c.subtitle.is_empty() {
                     let (sub_rel, sub_bonus) = Self::compute_text_score(&c.subtitle, &q_lower);
                     if (sub_rel * 0.6) > text_relevance {
@@ -42,7 +43,8 @@ impl Ranker {
                     (0.0, 0.0)
                 };
 
-                let final_score = text_relevance + match_bonus + type_bonus + usage_score + recency_score;
+                let final_score =
+                    text_relevance + match_bonus + type_bonus + usage_score + recency_score;
 
                 SearchResult {
                     id: c.id,
@@ -60,7 +62,11 @@ impl Ranker {
             b.score
                 .partial_cmp(&a.score)
                 .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.display_name.to_lowercase().cmp(&b.display_name.to_lowercase()))
+                .then_with(|| {
+                    a.display_name
+                        .to_lowercase()
+                        .cmp(&b.display_name.to_lowercase())
+                })
         });
 
         scored.truncate(limit);
@@ -127,10 +133,19 @@ mod tests {
 
     #[test]
     fn test_type_priority_bonus() {
-        assert_eq!(Ranker::compute_type_priority_bonus(&ResultType::Calculator), 0.25);
+        assert_eq!(
+            Ranker::compute_type_priority_bonus(&ResultType::Calculator),
+            0.25
+        );
         assert_eq!(Ranker::compute_type_priority_bonus(&ResultType::App), 0.20);
-        assert_eq!(Ranker::compute_type_priority_bonus(&ResultType::Command), 0.15);
-        assert_eq!(Ranker::compute_type_priority_bonus(&ResultType::Folder), 0.10);
+        assert_eq!(
+            Ranker::compute_type_priority_bonus(&ResultType::Command),
+            0.15
+        );
+        assert_eq!(
+            Ranker::compute_type_priority_bonus(&ResultType::Folder),
+            0.10
+        );
         assert_eq!(Ranker::compute_type_priority_bonus(&ResultType::File), 0.05);
     }
 

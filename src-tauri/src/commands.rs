@@ -185,13 +185,7 @@ pub async fn launch(
     {
         let db = state.db.lock().await;
         let _ = crate::database::usage::increment_usage(&db, &id, &result_type);
-        let _ = crate::database::history::record_launch_history(
-            &db,
-            "",
-            &id,
-            &result_type,
-            &id,
-        );
+        let _ = crate::database::history::record_launch_history(&db, "", &id, &result_type, &id);
     }
 
     // Resolve target path and launch
@@ -205,7 +199,9 @@ pub async fn launch(
 
         match result_type.as_str() {
             "app" => {
-                if let Ok(Some(app_rec)) = crate::database::apps::get_application_by_id_or_path(&db, &id) {
+                if let Ok(Some(app_rec)) =
+                    crate::database::apps::get_application_by_id_or_path(&db, &id)
+                {
                     target_path = if let Some(shortcut) = app_rec.shortcut_path {
                         if std::path::Path::new(&shortcut).exists() {
                             shortcut
@@ -219,12 +215,15 @@ pub async fn launch(
                 }
             }
             "file" => {
-                if let Ok(Some(file_rec)) = crate::database::files::get_file_by_id_or_path(&db, &id) {
+                if let Ok(Some(file_rec)) = crate::database::files::get_file_by_id_or_path(&db, &id)
+                {
                     target_path = file_rec.path;
                 }
             }
             "folder" => {
-                if let Ok(Some(folder_rec)) = crate::database::folders::get_folder_by_id_or_path(&db, &id) {
+                if let Ok(Some(folder_rec)) =
+                    crate::database::folders::get_folder_by_id_or_path(&db, &id)
+                {
                     target_path = folder_rec.path;
                 }
             }
@@ -284,7 +283,9 @@ pub async fn update_settings(
 }
 
 #[tauri::command]
-pub async fn get_recent_results(state: State<'_, Arc<AppState>>) -> Result<Vec<SearchResultDto>, String> {
+pub async fn get_recent_results(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<SearchResultDto>, String> {
     let db = state.db.lock().await;
     match crate::database::history::get_recent_history(&db, 8) {
         Ok(history) => {
@@ -317,7 +318,6 @@ pub async fn rebuild_index(state: State<'_, Arc<AppState>>) -> Result<(), String
     crate::indexer::manager::IndexManager::start_background_indexing(state.inner().clone());
     Ok(())
 }
-
 
 #[tauri::command]
 pub async fn get_app_info() -> Result<AppInfoDto, String> {

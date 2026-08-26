@@ -85,5 +85,4 @@ pub fn run_migrations(conn: &mut Connection) -> AppResult<()> {
     .map_err(|e| AppError::Database(format!("Failed to ensure FTS triggers: {}", e)))?;
 
     Ok(())
-
 }

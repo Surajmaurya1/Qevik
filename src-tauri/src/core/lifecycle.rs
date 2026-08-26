@@ -3,7 +3,7 @@ use tracing::info;
 
 pub fn on_app_ready(app: &AppHandle, is_startup: bool) {
     info!("Spotlight core initialized. is_startup: {}", is_startup);
-    
+
     // If not started in background --startup mode, we can optionally keep window hidden until hotkey
     if let Some(window) = app.get_webview_window("main") {
         if !is_startup {

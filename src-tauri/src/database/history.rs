@@ -4,11 +4,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub struct HistoryRecord {
+    #[allow(dead_code)]
     pub id: i64,
+    #[allow(dead_code)]
     pub query: String,
     pub result_id: String,
     pub result_type: String,
     pub result_name: String,
+    #[allow(dead_code)]
     pub launched_at: i64,
 }
 
@@ -42,10 +45,7 @@ pub fn record_launch_history(
     Ok(())
 }
 
-pub fn get_recent_history(
-    conn: &Connection,
-    limit: usize,
-) -> AppResult<Vec<HistoryRecord>> {
+pub fn get_recent_history(conn: &Connection, limit: usize) -> AppResult<Vec<HistoryRecord>> {
     let mut stmt = conn
         .prepare_cached(
             "SELECT id, query, result_id, result_type, result_name, launched_at
@@ -69,10 +69,8 @@ pub fn get_recent_history(
         .map_err(|e| AppError::Database(format!("Query get_recent error: {}", e)))?;
 
     let mut results = Vec::new();
-    for row in rows {
-        if let Ok(rec) = row {
-            results.push(rec);
-        }
+    for rec in rows.flatten() {
+        results.push(rec);
     }
 
     Ok(results)

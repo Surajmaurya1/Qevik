@@ -34,10 +34,8 @@ pub fn position_window_on_active_monitor(window: &WebviewWindow) {
                 let x = rc_work.left + (monitor_width - window_width) / 2;
                 let y = rc_work.top + (monitor_height - window_height) / 3;
 
-                let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
-                    x,
-                    y,
-                }));
+                let _ = window
+                    .set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
                 return;
             }
         }

@@ -32,7 +32,7 @@ impl Default for AppSettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IndexStatus {
     pub is_indexing: bool,
     pub total_applications: usize,
@@ -41,22 +41,11 @@ pub struct IndexStatus {
     pub last_indexed_at: Option<i64>,
 }
 
-impl Default for IndexStatus {
-    fn default() -> Self {
-        Self {
-            is_indexing: false,
-            total_applications: 0,
-            total_files: 0,
-            total_folders: 0,
-            last_indexed_at: None,
-        }
-    }
-}
-
 pub struct AppState {
     pub db: Arc<Mutex<Connection>>,
     pub settings: Arc<RwLock<AppSettings>>,
     pub index_status: Arc<RwLock<IndexStatus>>,
+    #[allow(dead_code)]
     pub search_cancel: Arc<AtomicBool>,
 }
 
@@ -66,8 +55,8 @@ impl AppState {
         crate::database::migrations::run_migrations(&mut conn)?;
 
         // Load settings from database if previously saved
-        let initial_settings = crate::database::settings::load_settings_from_db(&conn)?
-            .unwrap_or_default();
+        let initial_settings =
+            crate::database::settings::load_settings_from_db(&conn)?.unwrap_or_default();
 
         Ok(Self {
             db: Arc::new(Mutex::new(conn)),

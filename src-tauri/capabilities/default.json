@@ -3,9 +3,5 @@
   "identifier": "default",
   "description": "Default permissions for Spotlight for Windows",
   "windows": ["main"],
-  "permissions": [
-    "core:default",
-    "global-shortcut:default",
-    "shell:default"
-  ]
+  "permissions": ["core:default", "global-shortcut:default", "shell:default"]
 }

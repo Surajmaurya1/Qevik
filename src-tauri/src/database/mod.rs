@@ -153,7 +153,10 @@ mod tests {
         // Lookup file by ID
         let found = files::get_file_by_id_or_path(&conn, "file_txt").unwrap();
         assert!(found.is_some());
-        assert_eq!(found.unwrap().path, "C:\\Users\\Test\\Documents\\my_notes.txt");
+        assert_eq!(
+            found.unwrap().path,
+            "C:\\Users\\Test\\Documents\\my_notes.txt"
+        );
 
         // Lookup folder by ID
         let found_folder = folders::get_folder_by_id_or_path(&conn, "folder_doc").unwrap();
@@ -161,4 +164,3 @@ mod tests {
         assert_eq!(found_folder.unwrap().path, "C:\\Users\\Test\\Documents");
     }
 }
-

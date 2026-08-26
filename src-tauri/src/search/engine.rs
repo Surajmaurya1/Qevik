@@ -44,18 +44,13 @@ impl SearchEngine {
 
             QueryMode::Calculator(expr) => {
                 if let Some(candidate) = CalculatorProvider::evaluate(&expr) {
-                    let ranked = Ranker::rank_all(
-                        vec![candidate],
-                        &expr,
-                        &HashMap::new(),
-                        max_results,
-                    );
+                    let ranked =
+                        Ranker::rank_all(vec![candidate], &expr, &HashMap::new(), max_results);
                     Ok(ranked)
                 } else {
                     Ok(vec![])
                 }
             }
-
 
             QueryMode::Command(cmd) => {
                 let candidates = CommandsProvider::search(&cmd);

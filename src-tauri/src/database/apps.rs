@@ -16,10 +16,7 @@ pub struct ApplicationRecord {
     pub updated_at: i64,
 }
 
-pub fn upsert_applications(
-    conn: &mut Connection,
-    apps: &[ApplicationRecord],
-) -> AppResult<usize> {
+pub fn upsert_applications(conn: &mut Connection, apps: &[ApplicationRecord]) -> AppResult<usize> {
     let tx = conn
         .transaction()
         .map_err(|e| AppError::Database(format!("Transaction start failed: {}", e)))?;
@@ -85,7 +82,13 @@ pub fn search_applications_fts(
     query: &str,
     limit: usize,
 ) -> AppResult<Vec<ApplicationRecord>> {
-    let like_pattern = format!("%{}%", query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
+    let like_pattern = format!(
+        "%{}%",
+        query
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    );
     let fts_query = build_fts_query(query);
 
     let mut results = Vec::new();
@@ -199,7 +202,7 @@ pub fn get_application_by_id_or_path(
     }
 }
 
-
+#[allow(dead_code)]
 pub fn get_all_applications(conn: &Connection) -> AppResult<Vec<ApplicationRecord>> {
     let mut stmt = conn
         .prepare_cached(
@@ -228,15 +231,14 @@ pub fn get_all_applications(conn: &Connection) -> AppResult<Vec<ApplicationRecor
         .map_err(|e| AppError::Database(format!("Query get_all error: {}", e)))?;
 
     let mut results = Vec::new();
-    for row in rows {
-        if let Ok(app) = row {
-            results.push(app);
-        }
+    for app in rows.flatten() {
+        results.push(app);
     }
 
     Ok(results)
 }
 
+#[allow(dead_code)]
 pub fn count_applications(conn: &Connection) -> AppResult<usize> {
     let count: usize = conn
         .query_row("SELECT COUNT(*) FROM applications;", [], |r| r.get(0))

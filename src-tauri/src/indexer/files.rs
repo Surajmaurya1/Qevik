@@ -23,7 +23,10 @@ impl FileIndexer {
 
         for (dir_path, max_depth) in targets {
             if dir_path.exists() {
-                debug!("Scanning directory {:?} with max depth {}", dir_path, max_depth);
+                debug!(
+                    "Scanning directory {:?} with max depth {}",
+                    dir_path, max_depth
+                );
                 Self::scan_recursive(&dir_path, 0, max_depth, &mut all_files, &mut all_folders);
             }
         }

@@ -5,7 +5,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 pub struct AppIndexer;
 
@@ -43,10 +43,19 @@ impl AppIndexer {
             }
 
             // 4. WindowsApps execution aliases (%LOCALAPPDATA%\Microsoft\WindowsApps, depth 1)
-            let windows_apps_dir = PathBuf::from(&local_app_data).join("Microsoft").join("WindowsApps");
+            let windows_apps_dir = PathBuf::from(&local_app_data)
+                .join("Microsoft")
+                .join("WindowsApps");
             if windows_apps_dir.exists() {
                 debug!("Scanning WindowsApps aliases: {:?}", windows_apps_dir);
-                Self::scan_directory_bounded(&windows_apps_dir, "WindowsApps", 0, 1, now, &mut apps);
+                Self::scan_directory_bounded(
+                    &windows_apps_dir,
+                    "WindowsApps",
+                    0,
+                    1,
+                    now,
+                    &mut apps,
+                );
             }
         }
 
@@ -273,9 +282,9 @@ impl AppIndexer {
                         let display_name = clean_app_name(&file_stem);
                         let key = display_name.to_lowercase();
 
-                        if !apps.contains_key(&key) {
+                        apps.entry(key).or_insert_with(|| {
                             let id = format!("app_{:x}", simple_hash(&path_str));
-                            let record = ApplicationRecord {
+                            ApplicationRecord {
                                 id,
                                 display_name,
                                 exe_path: path_str.clone(),
@@ -290,10 +299,8 @@ impl AppIndexer {
                                 source: source.to_string(),
                                 indexed_at: now,
                                 updated_at: now,
-                            };
-
-                            apps.insert(key, record);
-                        }
+                            }
+                        });
                     }
                 }
             }
@@ -469,26 +476,23 @@ impl AppIndexer {
 
                                 let display_name = clean_app_name(&file_stem);
                                 let key = display_name.to_lowercase();
+                                let path_str = target_path.to_string_lossy().to_string();
 
-                                if !apps.contains_key(&key) {
-                                    let path_str = target_path.to_string_lossy().to_string();
+                                apps.entry(key).or_insert_with(|| {
                                     let id = format!("app_{:x}", simple_hash(&path_str));
-                                    apps.insert(
-                                        key,
-                                        ApplicationRecord {
-                                            id,
-                                            display_name,
-                                            exe_path: path_str,
-                                            shortcut_path: None,
-                                            arguments: None,
-                                            icon_path: None,
-                                            icon_index: 0,
-                                            source: format!("AppPaths_{}", source_name),
-                                            indexed_at: now,
-                                            updated_at: now,
-                                        },
-                                    );
-                                }
+                                    ApplicationRecord {
+                                        id,
+                                        display_name,
+                                        exe_path: path_str,
+                                        shortcut_path: None,
+                                        arguments: None,
+                                        icon_path: None,
+                                        icon_index: 0,
+                                        source: format!("AppPaths_{}", source_name),
+                                        indexed_at: now,
+                                        updated_at: now,
+                                    }
+                                });
                             }
                         }
                     }
@@ -595,7 +599,10 @@ mod tests {
     fn test_scan_all_sources() {
         let apps = AppIndexer::scan_all_sources().unwrap();
         println!("Indexed {} applications", apps.len());
-        assert!(!apps.is_empty(), "App scan should find applications on Windows");
+        assert!(
+            !apps.is_empty(),
+            "App scan should find applications on Windows"
+        );
 
         // Verify Notepad and Antigravity or common apps are discovered
         let names: Vec<String> = apps.iter().map(|a| a.display_name.to_lowercase()).collect();
@@ -605,5 +612,3 @@ mod tests {
         );
     }
 }
-
-

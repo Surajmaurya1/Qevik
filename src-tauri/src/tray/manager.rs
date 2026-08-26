@@ -13,37 +13,30 @@ pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
 
     let menu = Menu::with_items(
         app,
-        &[
-            &open_item,
-            &settings_item,
-            &reindex_item,
-            &quit_item,
-        ],
+        &[&open_item, &settings_item, &reindex_item, &quit_item],
     )?;
 
     let tray = TrayIconBuilder::with_id("spotlight-tray")
         .tooltip("Spotlight for Windows")
         .menu(&menu)
         .show_menu_on_left_click(false)
-        .on_menu_event(|app, event| {
-            match event.id.as_ref() {
-                "open" => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "open" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
                 }
-                "settings" => {
-                    info!("Settings requested from tray");
-                }
-                "reindex" => {
-                    info!("Manual re-index triggered from tray");
-                }
-                "quit" => {
-                    crate::core::lifecycle::graceful_shutdown(app);
-                }
-                _ => {}
             }
+            "settings" => {
+                info!("Settings requested from tray");
+            }
+            "reindex" => {
+                info!("Manual re-index triggered from tray");
+            }
+            "quit" => {
+                crate::core::lifecycle::graceful_shutdown(app);
+            }
+            _ => {}
         })
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click { button, .. } = event {

@@ -53,10 +53,7 @@ impl QueryParser {
             || s.starts_with("abs(");
 
         let valid_chars = s.chars().all(|c| {
-            c.is_ascii_digit()
-                || c.is_whitespace()
-                || "+-*/^%().,".contains(c)
-                || c.is_alphabetic()
+            c.is_ascii_digit() || c.is_whitespace() || "+-*/^%().,".contains(c) || c.is_alphabetic()
         });
 
         has_operator && valid_chars && !s.chars().all(|c| c.is_alphabetic())

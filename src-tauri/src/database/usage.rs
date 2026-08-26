@@ -4,17 +4,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub struct UsageRecord {
+    #[allow(dead_code)]
     pub result_id: String,
+    #[allow(dead_code)]
     pub result_type: String,
     pub launch_count: i64,
     pub last_launched_at: i64,
 }
 
-pub fn increment_usage(
-    conn: &Connection,
-    result_id: &str,
-    result_type: &str,
-) -> AppResult<()> {
+pub fn increment_usage(conn: &Connection, result_id: &str, result_type: &str) -> AppResult<()> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -33,6 +31,7 @@ pub fn increment_usage(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn get_usage(
     conn: &Connection,
     result_id: &str,
@@ -50,7 +49,10 @@ pub fn get_usage(
         .query(params![result_id, result_type])
         .map_err(|e| AppError::Database(format!("Query get_usage error: {}", e)))?;
 
-    if let Some(row) = rows.next().map_err(|e| AppError::Database(format!("Row error: {}", e)))? {
+    if let Some(row) = rows
+        .next()
+        .map_err(|e| AppError::Database(format!("Row error: {}", e)))?
+    {
         Ok(Some(UsageRecord {
             result_id: row.get(0).map_err(|e| AppError::Database(e.to_string()))?,
             result_type: row.get(1).map_err(|e| AppError::Database(e.to_string()))?,
