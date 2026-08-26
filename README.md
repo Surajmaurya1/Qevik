@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ Qevik — Spotlight for Windows
+# Qevik — Spotlight for Windows
 
 **A blazing-fast, keyboard-first, offline-first application launcher and system search for Windows 10 & 11.**
 
@@ -13,29 +13,29 @@
 
 ---
 
-[Features](#-key-features) • [Keyboard Shortcuts](#-keyboard-shortcuts) • [Architecture](#-architecture) • [Benchmarks](#-performance-benchmarks) • [Quickstart](#-getting-started) • [Contributing](#-contributing)
+[Features](#key-features) • [Keyboard Shortcuts](#keyboard-shortcuts) • [Architecture](#architecture) • [Benchmarks](#performance-benchmarks) • [Quickstart](#getting-started) • [Contributing](#contributing)
 
 ---
 
 </div>
 
-## 🚀 Overview
+## Overview
 
 Existing desktop search and launcher utilities are often bloated with telemetry, require cloud accounts, poll disk drives constantly, or feel clunky.
 
 **Qevik** is engineered with extreme performance discipline and zero compromise on privacy:
 
-- **⚡ Instantaneous:** Reveals in `< 100ms` from a global hotkey press with automatic input focus.
-- **🧠 Sub-Millisecond App Search:** Uses an in-memory cache and SQLite FTS5 for `< 0.05ms` lookup latency.
-- **🛡️ 100% Offline & Private:** Zero network requests, zero telemetry, zero background polling.
-- **🪶 Ultra-Lightweight:** Automatic background working set memory trimming consumes `< 25 MB` idle RAM.
-- **🪟 Native Windows Integration:** Deep Win32 shell integration, multi-monitor cursor awareness, and system tray presence.
+- **Instantaneous:** Reveals in `< 100ms` from a global hotkey press with automatic input focus.
+- **Sub-Millisecond App Search:** Uses an in-memory cache and SQLite FTS5 for `< 0.05ms` lookup latency.
+- **100% Offline & Private:** Zero network requests, zero telemetry, zero background polling.
+- **Ultra-Lightweight:** Automatic background working set memory trimming consumes `< 25 MB` idle RAM.
+- **Native Windows Integration:** Deep Win32 shell integration, multi-monitor cursor awareness, and system tray presence.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🔍 Comprehensive Application Discovery
+### Comprehensive Application Discovery
 
 - Automatically discovers installed software across:
   - User and System Start Menu programs (`.lnk`, `.exe`)
@@ -46,19 +46,19 @@ Existing desktop search and launcher utilities are often bloated with telemetry,
   - Standard Windows System32 tools (`Notepad`, `Calculator`, `Paint`, `Task Manager`, `PowerShell`, `cmd`, etc.)
 - Automatically ignores uninstaller helpers, crash reporters, and compiler build artifacts.
 
-### 📁 Fast Local File & Folder Search
+### Fast Local File & Folder Search
 
 - Full-text token and partial substring search across standard user libraries (Desktop, Documents, Downloads, Pictures, Videos, and Music).
 - Files open in their **Windows default associated applications** (`.txt`, `.pdf`, docs, media).
 - Folders open directly in **File Explorer**.
 - Real-time incremental synchronization via Windows directory change notifications (`ReadDirectoryChangesW`).
 
-### 🧮 Instant Calculator & Expressions
+### Instant Calculator & Expressions
 
 - Real-time arithmetic evaluation directly in the search bar (e.g. `= (45 * 12) + 180`, `sqrt(144)`).
 - Pressing `Enter` automatically copies the calculated value to your clipboard.
 
-### ⚙️ Safe System Commands
+### Safe System Commands
 
 - Quick system actions with immediate execution:
   - `> lock` — Locks your Windows workstation.
@@ -66,14 +66,14 @@ Existing desktop search and launcher utilities are often bloated with telemetry,
   - `> restart` / `> shutdown` — Safe power management.
   - `> task manager` / `> control panel` / `> settings` — Instant system utility access.
 
-### 🎯 Smart Personalized Ranking
+### Smart Personalized Ranking
 
 - Automatically prioritizes frequently and recently launched applications and files.
 - Deduplicated recent search history shown immediately on empty query.
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Shortcut                  | Action                                                    |
 | :------------------------ | :-------------------------------------------------------- |
@@ -87,22 +87,22 @@ Existing desktop search and launcher utilities are often bloated with telemetry,
 
 ---
 
-## 📊 Performance Benchmarks
+## Performance Benchmarks
 
 All metrics represent strict engineering budgets measured on standard Windows hardware:
 
-| Metric                           | Target Budget | Observed Performance   | Status      |
-| :------------------------------- | :------------ | :--------------------- | :---------- |
-| **Hotkey to Visible UI**         | `< 150 ms`    | **`~45 - 80 ms`**      | ✅ Exceeded |
-| **In-Memory App Search**         | `< 5 ms`      | **`< 0.05 ms`**        | ✅ Exceeded |
-| **Full File Search (10k items)** | `< 100 ms`    | **`~8 - 18 ms`**       | ✅ Exceeded |
-| **Idle RAM Footprint**           | `< 50 MB`     | **`~18 - 24 MB`**      | ✅ Exceeded |
-| **Idle CPU Utilization**         | `< 0.1%`      | **`0.0%`**             | ✅ Exceeded |
-| **Frontend Production Bundle**   | `< 100 KB`    | **`~58 KB` (gzipped)** | ✅ Exceeded |
+| Metric                           | Target Budget | Observed Performance   | Status   |
+| :------------------------------- | :------------ | :--------------------- | :------- |
+| **Hotkey to Visible UI**         | `< 150 ms`    | **`~45 - 80 ms`**      | Exceeded |
+| **In-Memory App Search**         | `< 5 ms`      | **`< 0.05 ms`**        | Exceeded |
+| **Full File Search (10k items)** | `< 100 ms`    | **`~8 - 18 ms`**       | Exceeded |
+| **Idle RAM Footprint**           | `< 50 MB`     | **`~18 - 24 MB`**      | Exceeded |
+| **Idle CPU Utilization**         | `< 0.1%`      | **`0.0%`**             | Exceeded |
+| **Frontend Production Bundle**   | `< 100 KB`    | **`~58 KB` (gzipped)** | Exceeded |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -129,7 +129,7 @@ graph TD
 
 ---
 
-## 🔒 Privacy & Security Guarantee
+## Privacy & Security Guarantee
 
 - **Zero Network Telemetry**: Qevik never connects to external servers for core search.
 - **100% Local Storage**: All indexed metadata and history reside solely in `%APPDATA%\SpotlightForWindows\spotlight.db`.
@@ -137,7 +137,7 @@ graph TD
 
 ---
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -179,7 +179,7 @@ cargo test --all                                           # Automated unit & in
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 ├── .github/              # GitHub Actions CI/CD workflows
@@ -202,16 +202,16 @@ cargo test --all                                           # Automated unit & in
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are always welcome! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming conventions, conventional commit standards, and PR guidelines.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 <div align="center">
-  <sub>Built with ❤️ for Windows power users.</sub>
+  <sub>Built for Windows power users.</sub>
 </div>
