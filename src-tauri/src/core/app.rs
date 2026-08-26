@@ -15,11 +15,10 @@ pub fn create_app() -> tauri::Builder<tauri::Wry> {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             info!("Second instance detected. Revealing primary instance window.");
             if let Some(window) = app.get_webview_window("main") {
-                crate::windows::window::position_window_on_active_monitor(&window);
-                let _ = window.show();
-                let _ = window.set_focus();
+                crate::windows::window::show_launcher(&window);
             }
         }))
+
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {

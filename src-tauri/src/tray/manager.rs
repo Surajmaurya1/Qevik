@@ -23,8 +23,7 @@ pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "open" => {
                 if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
+                    crate::windows::window::show_launcher(&window);
                 }
             }
             "settings" => {
@@ -46,13 +45,13 @@ pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
                         if window.is_visible().unwrap_or(false) {
                             let _ = window.hide();
                         } else {
-                            let _ = window.show();
-                            let _ = window.set_focus();
+                            crate::windows::window::show_launcher(&window);
                         }
                     }
                 }
             }
         })
+
         .build(app)?;
 
     Ok(tray)

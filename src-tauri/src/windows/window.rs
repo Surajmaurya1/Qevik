@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use tracing::{error, info};
 
 #[cfg(windows)]
@@ -45,6 +45,15 @@ pub fn position_window_on_active_monitor(window: &WebviewWindow) {
     let _ = window.center();
 }
 
+/// Reveal and focus the launcher window.
+pub fn show_launcher(window: &WebviewWindow) {
+    position_window_on_active_monitor(window);
+    let _ = window.show();
+    let _ = window.set_focus();
+    let _ = window.emit("launcher-shown", ());
+    info!("Launcher opened on active monitor");
+}
+
 /// Toggle launcher window visibility.
 pub fn toggle_launcher(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -53,10 +62,7 @@ pub fn toggle_launcher(app: &AppHandle) {
                 let _ = window.hide();
             }
             Ok(false) => {
-                position_window_on_active_monitor(&window);
-                let _ = window.show();
-                let _ = window.set_focus();
-                info!("Launcher opened on active monitor");
+                show_launcher(&window);
             }
             Err(e) => {
                 error!("Failed to query window visibility: {}", e);
@@ -64,3 +70,4 @@ pub fn toggle_launcher(app: &AppHandle) {
         }
     }
 }
+
