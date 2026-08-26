@@ -112,8 +112,8 @@ export const Launcher: React.FC<LauncherProps> = ({ onOpenSettings }) => {
       try {
         await launch(itemToLaunch.id, itemToLaunch.result_type);
         await hideLauncher();
-      } catch (err) {
-        console.error('Launch failed:', err);
+      } catch {
+        // Failed launch handled gracefully
       }
     },
     [results, selectedIndex],
