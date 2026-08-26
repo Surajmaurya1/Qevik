@@ -28,7 +28,11 @@ export async function launch(id: string, resultType: string): Promise<LaunchResp
   if (!isTauriEnvironment()) {
     return { success: true };
   }
-  return await invoke<LaunchResponse>('launch', { id, result_type: resultType });
+  return await invoke<LaunchResponse>('launch', {
+    id,
+    resultType,
+    result_type: resultType,
+  });
 }
 
 /**

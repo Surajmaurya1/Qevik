@@ -55,7 +55,18 @@ export const Launcher: React.FC<LauncherProps> = ({ onOpenSettings }) => {
 
   useEffect(() => {
     void loadRecentOrEmpty();
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        void hideLauncher();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+
     return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
       if (debounceTimerRef.current) {
         window.clearTimeout(debounceTimerRef.current);
       }
@@ -75,8 +86,8 @@ export const Launcher: React.FC<LauncherProps> = ({ onOpenSettings }) => {
       try {
         await launch(itemToLaunch.id, itemToLaunch.result_type);
         await hideLauncher();
-      } catch {
-        // Failed to launch gracefully handled
+      } catch (err) {
+        console.error('Launch failed:', err);
       }
     },
     [results, selectedIndex],
@@ -124,7 +135,14 @@ export const Launcher: React.FC<LauncherProps> = ({ onOpenSettings }) => {
   return (
     <div className="launcher-window anim-fade-in">
       <div className="launcher-card">
-        <SearchInput value={query} onChange={handleQueryChange} onKeyDown={handleKeyDown} />
+        <SearchInput
+          value={query}
+          onChange={handleQueryChange}
+          onKeyDown={handleKeyDown}
+          onClose={() => {
+            void hideLauncher();
+          }}
+        />
         <ResultList
           results={results}
           selectedIndex={selectedIndex}

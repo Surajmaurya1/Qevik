@@ -1,16 +1,23 @@
 import React, { useRef, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import './SearchInput.css';
 
 interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onClose?: () => void;
   placeholder?: string;
 }
 
 export const SearchInput: React.FC<SearchInputProps> = React.memo(
-  ({ value, onChange, onKeyDown, placeholder = 'Search applications, files, commands...' }) => {
+  ({
+    value,
+    onChange,
+    onKeyDown,
+    onClose,
+    placeholder = 'Search applications, files, commands...',
+  }) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -38,6 +45,17 @@ export const SearchInput: React.FC<SearchInputProps> = React.memo(
           autoCorrect="off"
           aria-label="Search"
         />
+        {onClose && (
+          <button
+            type="button"
+            className="search-close-button"
+            onClick={onClose}
+            aria-label="Close Spotlight"
+            title="Close Spotlight (Esc)"
+          >
+            <X size={18} strokeWidth={2} />
+          </button>
+        )}
       </div>
     );
   },
