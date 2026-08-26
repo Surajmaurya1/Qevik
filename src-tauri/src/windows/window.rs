@@ -70,4 +70,3 @@ pub fn toggle_launcher(app: &AppHandle) {
         }
     }
 }
-

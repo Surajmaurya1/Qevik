@@ -28,17 +28,63 @@ impl SearchEngine {
             QueryMode::Empty => {
                 let db = state.db.lock().await;
                 let recent = crate::database::history::get_recent_history(&db, max_results)?;
-                let results = recent
-                    .into_iter()
-                    .map(|h| SearchResult {
+                let mut results = Vec::new();
+                for h in recent {
+                    let mut name = h.result_name;
+                    let mut subtitle = "Recent launch".to_string();
+                    let res_type = match h.result_type.as_str() {
+                        "file" => {
+                            if let Ok(Some(file_rec)) =
+                                crate::database::files::get_file_by_id_or_path(&db, &h.result_id)
+                            {
+                                name = file_rec.name;
+                                subtitle = file_rec.parent_dir;
+                            }
+                            ResultType::File
+                        }
+                        "folder" => {
+                            if let Ok(Some(folder_rec)) =
+                                crate::database::folders::get_folder_by_id_or_path(
+                                    &db,
+                                    &h.result_id,
+                                )
+                            {
+                                name = folder_rec.name;
+                                subtitle = folder_rec.parent_dir;
+                            }
+                            ResultType::Folder
+                        }
+                        "web" => ResultType::Web,
+                        _ => {
+                            if let Ok(Some(app_rec)) =
+                                crate::database::apps::get_application_by_id_or_path(
+                                    &db,
+                                    &h.result_id,
+                                )
+                            {
+                                name = app_rec.display_name;
+                                subtitle = "Application".to_string();
+                            }
+                            ResultType::App
+                        }
+                    };
+
+                    if name.starts_with("file_")
+                        || name.starts_with("app_")
+                        || name.starts_with("folder_")
+                    {
+                        continue;
+                    }
+
+                    results.push(SearchResult {
                         id: h.result_id,
-                        result_type: ResultType::App,
-                        display_name: h.result_name,
-                        subtitle: "Recently opened".into(),
+                        result_type: res_type,
+                        display_name: name,
+                        subtitle,
                         score: 1.0,
                         icon_id: None,
-                    })
-                    .collect();
+                    });
+                }
                 Ok(results)
             }
 
@@ -89,14 +135,12 @@ impl SearchEngine {
                         candidates.append(&mut apps);
                     }
 
-                    if q.len() >= 2 {
-                        if let Ok(mut files) = FilesProvider::search(&db, &q, 25) {
-                            candidates.append(&mut files);
-                        }
+                    if let Ok(mut files) = FilesProvider::search(&db, &q, 25) {
+                        candidates.append(&mut files);
+                    }
 
-                        if let Ok(mut folders) = FoldersProvider::search(&db, &q, 15) {
-                            candidates.append(&mut folders);
-                        }
+                    if let Ok(mut folders) = FoldersProvider::search(&db, &q, 15) {
+                        candidates.append(&mut folders);
                     }
                 }
 

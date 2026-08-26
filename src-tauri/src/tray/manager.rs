@@ -51,7 +51,6 @@ pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
                 }
             }
         })
-
         .build(app)?;
 
     Ok(tray)

@@ -80,6 +80,9 @@ pub fn run_migrations(conn: &mut Connection) -> AppResult<()> {
           INSERT INTO folders_fts(folders_fts, rowid, name, path) VALUES('delete', old.rowid, old.name, old.path);
           INSERT INTO folders_fts(rowid, name, path) VALUES (new.rowid, new.name, new.path);
         END;
+
+        -- Clean up any legacy history rows that recorded IDs as names
+        DELETE FROM history WHERE result_name LIKE 'file_%' OR result_name LIKE 'app_%' OR result_name LIKE 'folder_%';
         ",
     )
     .map_err(|e| AppError::Database(format!("Failed to ensure FTS triggers: {}", e)))?;

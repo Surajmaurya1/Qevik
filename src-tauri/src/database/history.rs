@@ -48,8 +48,10 @@ pub fn record_launch_history(
 pub fn get_recent_history(conn: &Connection, limit: usize) -> AppResult<Vec<HistoryRecord>> {
     let mut stmt = conn
         .prepare_cached(
-            "SELECT id, query, result_id, result_type, result_name, launched_at
+            "SELECT result_id, result_type, MAX(result_name) as result_name, MAX(launched_at) as launched_at
              FROM history
+             WHERE result_name NOT LIKE 'file_%' AND result_name NOT LIKE 'app_%' AND result_name NOT LIKE 'folder_%'
+             GROUP BY result_id, result_type
              ORDER BY launched_at DESC
              LIMIT ?1;",
         )
@@ -58,12 +60,12 @@ pub fn get_recent_history(conn: &Connection, limit: usize) -> AppResult<Vec<Hist
     let rows = stmt
         .query_map(params![limit as i64], |row| {
             Ok(HistoryRecord {
-                id: row.get(0)?,
-                query: row.get(1)?,
-                result_id: row.get(2)?,
-                result_type: row.get(3)?,
-                result_name: row.get(4)?,
-                launched_at: row.get(5)?,
+                id: 0,
+                query: String::new(),
+                result_id: row.get(0)?,
+                result_type: row.get(1)?,
+                result_name: row.get(2)?,
+                launched_at: row.get(3)?,
             })
         })
         .map_err(|e| AppError::Database(format!("Query get_recent error: {}", e)))?;

@@ -181,27 +181,22 @@ pub async fn launch(
         let _ = window.hide();
     }
 
-    // Record usage in DB
-    {
-        let db = state.db.lock().await;
-        let _ = crate::database::usage::increment_usage(&db, &id, &result_type);
-        let _ = crate::database::history::record_launch_history(&db, "", &id, &result_type, &id);
-    }
+    let mut target_path = id.clone();
+    let mut display_name = id.clone();
+    let mut arguments: Option<String> = None;
+    let is_folder = result_type == "folder";
+    let is_web = result_type == "web";
 
-    // Resolve target path and launch
-    #[cfg(windows)]
+    // Resolve target path and display name from DB
     {
         let db = state.db.lock().await;
-        let mut target_path = id.clone();
-        let mut arguments: Option<String> = None;
-        let is_folder = result_type == "folder";
-        let is_web = result_type == "web";
 
         match result_type.as_str() {
             "app" => {
                 if let Ok(Some(app_rec)) =
                     crate::database::apps::get_application_by_id_or_path(&db, &id)
                 {
+                    display_name = app_rec.display_name;
                     target_path = if let Some(shortcut) = app_rec.shortcut_path {
                         if std::path::Path::new(&shortcut).exists() {
                             shortcut
@@ -217,6 +212,7 @@ pub async fn launch(
             "file" => {
                 if let Ok(Some(file_rec)) = crate::database::files::get_file_by_id_or_path(&db, &id)
                 {
+                    display_name = file_rec.name;
                     target_path = file_rec.path;
                 }
             }
@@ -224,16 +220,31 @@ pub async fn launch(
                 if let Ok(Some(folder_rec)) =
                     crate::database::folders::get_folder_by_id_or_path(&db, &id)
                 {
+                    display_name = folder_rec.name;
                     target_path = folder_rec.path;
                 }
             }
             "web" => {
+                display_name = format!("Open {}", id);
                 target_path = id.clone();
             }
             _ => {}
         }
-        drop(db);
 
+        // Record usage in DB with human-readable display name
+        let _ = crate::database::usage::increment_usage(&db, &id, &result_type);
+        let _ = crate::database::history::record_launch_history(
+            &db,
+            "",
+            &id,
+            &result_type,
+            &display_name,
+        );
+    }
+
+    // Launch target
+    #[cfg(windows)]
+    {
         if let Err(e) = execute_target(&target_path, arguments.as_deref(), is_folder, is_web) {
             error!("Launch failed for {}: {}", target_path, e);
             return Ok(LaunchResponseDto {
@@ -289,17 +300,57 @@ pub async fn get_recent_results(
     let db = state.db.lock().await;
     match crate::database::history::get_recent_history(&db, 8) {
         Ok(history) => {
-            let results = history
-                .into_iter()
-                .map(|h| SearchResultDto {
+            let mut results = Vec::new();
+            for h in history {
+                let mut name = h.result_name;
+                let mut subtitle = "Recent launch".to_string();
+
+                match h.result_type.as_str() {
+                    "app" => {
+                        if let Ok(Some(app_rec)) =
+                            crate::database::apps::get_application_by_id_or_path(&db, &h.result_id)
+                        {
+                            name = app_rec.display_name;
+                            subtitle = "Application".to_string();
+                        }
+                    }
+                    "file" => {
+                        if let Ok(Some(file_rec)) =
+                            crate::database::files::get_file_by_id_or_path(&db, &h.result_id)
+                        {
+                            name = file_rec.name;
+                            subtitle = file_rec.parent_dir;
+                        }
+                    }
+                    "folder" => {
+                        if let Ok(Some(folder_rec)) =
+                            crate::database::folders::get_folder_by_id_or_path(&db, &h.result_id)
+                        {
+                            name = folder_rec.name;
+                            subtitle = folder_rec.parent_dir;
+                        }
+                    }
+
+                    _ => {}
+                }
+
+                // Skip any legacy items that somehow still have raw ID as name
+                if name.starts_with("file_")
+                    || name.starts_with("app_")
+                    || name.starts_with("folder_")
+                {
+                    continue;
+                }
+
+                results.push(SearchResultDto {
                     id: h.result_id,
                     result_type: h.result_type,
-                    display_name: h.result_name,
-                    subtitle: "Recent launch".into(),
+                    display_name: name,
+                    subtitle,
                     score: 1.0,
                     icon_id: None,
-                })
-                .collect();
+                });
+            }
             Ok(results)
         }
         Err(_) => Ok(vec![]),

@@ -18,7 +18,6 @@ pub fn create_app() -> tauri::Builder<tauri::Wry> {
                 crate::windows::window::show_launcher(&window);
             }
         }))
-
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
