@@ -45,6 +45,7 @@ pub struct AppState {
     pub db: Arc<Mutex<Connection>>,
     pub settings: Arc<RwLock<AppSettings>>,
     pub index_status: Arc<RwLock<IndexStatus>>,
+    pub app_cache: Arc<RwLock<Vec<crate::database::apps::ApplicationRecord>>>,
     #[allow(dead_code)]
     pub search_cancel: Arc<AtomicBool>,
 }
@@ -58,10 +59,14 @@ impl AppState {
         let initial_settings =
             crate::database::settings::load_settings_from_db(&conn)?.unwrap_or_default();
 
+        // Initial in-memory app cache load
+        let initial_apps = crate::database::apps::get_all_applications(&conn).unwrap_or_default();
+
         Ok(Self {
             db: Arc::new(Mutex::new(conn)),
             settings: Arc::new(RwLock::new(initial_settings)),
             index_status: Arc::new(RwLock::new(IndexStatus::default())),
+            app_cache: Arc::new(RwLock::new(initial_apps)),
             search_cancel: Arc::new(AtomicBool::new(false)),
         })
     }

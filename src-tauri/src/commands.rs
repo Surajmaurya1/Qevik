@@ -178,7 +178,7 @@ pub async fn launch(
 
     // Hide launcher window before launching per Section 8
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.hide();
+        crate::windows::window::hide_launcher(&window);
     }
 
     let mut target_path = id.clone();
@@ -268,7 +268,7 @@ pub async fn get_icon(_id: String) -> Result<IconResponseDto, String> {
 #[tauri::command]
 pub async fn hide_launcher(app: AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.hide();
+        crate::windows::window::hide_launcher(&window);
     }
     Ok(())
 }

@@ -50,7 +50,7 @@ export const Launcher: React.FC<LauncherProps> = ({ onOpenSettings }) => {
             // In case of cancellation or error, leave current state
           }
         })();
-      }, 60);
+      }, 20);
     },
     [loadRecentOrEmpty],
   );

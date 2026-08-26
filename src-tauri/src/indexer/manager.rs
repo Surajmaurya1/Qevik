@@ -7,7 +7,7 @@ use crate::indexer::apps::AppIndexer;
 use crate::indexer::files::FileIndexer;
 use crate::indexer::watcher::FilesystemWatcher;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tracing::{error, info};
 
 pub struct IndexManager;
@@ -15,39 +15,66 @@ pub struct IndexManager;
 impl IndexManager {
     /// Start full initial indexing in background thread without blocking UI.
     pub fn start_background_indexing(state: Arc<AppState>) {
-        let state_for_watcher = state.clone();
+        let state_clone = state.clone();
 
         tauri::async_runtime::spawn(async move {
-            info!("Starting background indexing pass for apps, files, and folders...");
+            info!("Starting staggered background indexing pass...");
 
             // Set indexing status flag
             {
-                let mut status = state.index_status.write().await;
+                let mut status = state_clone.index_status.write().await;
                 status.is_indexing = true;
             }
 
-            match tauri::async_runtime::spawn_blocking(
-                move || -> AppResult<(usize, usize, usize, i64)> {
-                    // 1. Scan applications
+            // Phase 1: Immediate Application Indexing & In-Memory Cache Population
+            let apps_result = tauri::async_runtime::spawn_blocking(
+                move || -> AppResult<Vec<crate::database::apps::ApplicationRecord>> {
                     let apps = AppIndexer::scan_all_sources()?;
-                    let app_count = apps.len();
+                    let mut conn = crate::database::connection::open_connection()?;
+                    crate::database::migrations::run_migrations(&mut conn)?;
+                    upsert_applications(&mut conn, &apps)?;
+                    let _ = conn.execute_batch(
+                        "INSERT INTO applications_fts(applications_fts) VALUES('rebuild');",
+                    );
+                    Ok(apps)
+                },
+            )
+            .await;
 
-                    // 2. Scan default user files and folders
+            if let Ok(Ok(apps)) = apps_result {
+                let app_count = apps.len();
+                {
+                    let mut cache = state_clone.app_cache.write().await;
+                    *cache = apps;
+                }
+                {
+                    let mut status = state_clone.index_status.write().await;
+                    status.total_applications = app_count;
+                }
+                info!(
+                    "Phase 1: In-memory app cache populated with {} applications.",
+                    app_count
+                );
+            }
+
+            // Phase 2: Staggered File & Folder Indexing (delayed by 2 seconds so startup is 100% instant)
+            tokio::time::sleep(Duration::from_millis(2000)).await;
+
+            let state_for_watcher = state_clone.clone();
+            let files_result =
+                tauri::async_runtime::spawn_blocking(move || -> AppResult<(usize, usize, i64)> {
                     let file_result = FileIndexer::scan_default_directories()?;
                     let file_count = file_result.files.len();
                     let folder_count = file_result.folders.len();
 
-                    // 3. Commit to SQLite
                     let mut conn = crate::database::connection::open_connection()?;
                     crate::database::migrations::run_migrations(&mut conn)?;
 
-                    upsert_applications(&mut conn, &apps)?;
                     upsert_files(&mut conn, &file_result.files)?;
                     upsert_folders(&mut conn, &file_result.folders)?;
 
                     let _ = conn.execute_batch(
-                        "INSERT INTO applications_fts(applications_fts) VALUES('rebuild');
-                     INSERT INTO files_fts(files_fts) VALUES('rebuild');
+                        "INSERT INTO files_fts(files_fts) VALUES('rebuild');
                      INSERT INTO folders_fts(folders_fts) VALUES('rebuild');",
                     );
 
@@ -56,19 +83,18 @@ impl IndexManager {
                         .unwrap_or_default()
                         .as_secs() as i64;
 
-                    Ok((app_count, file_count, folder_count, now))
-                },
-            )
-            .await
-            {
-                Ok(Ok((app_count, file_count, folder_count, timestamp))) => {
+                    Ok((file_count, folder_count, now))
+                })
+                .await;
+
+            match files_result {
+                Ok(Ok((file_count, folder_count, timestamp))) => {
                     info!(
-                        "Background indexing complete: {} apps, {} files, {} folders.",
-                        app_count, file_count, folder_count
+                        "Phase 2 complete: {} files, {} folders indexed.",
+                        file_count, folder_count
                     );
-                    let mut status = state.index_status.write().await;
+                    let mut status = state_clone.index_status.write().await;
                     status.is_indexing = false;
-                    status.total_applications = app_count;
                     status.total_files = file_count;
                     status.total_folders = folder_count;
                     status.last_indexed_at = Some(timestamp);
@@ -77,13 +103,13 @@ impl IndexManager {
                     FilesystemWatcher::start_watching(state_for_watcher);
                 }
                 Ok(Err(e)) => {
-                    error!("Indexing pass failed: {}", e);
-                    let mut status = state.index_status.write().await;
+                    error!("File indexing pass failed: {}", e);
+                    let mut status = state_clone.index_status.write().await;
                     status.is_indexing = false;
                 }
                 Err(e) => {
-                    error!("Join error in indexing task: {}", e);
-                    let mut status = state.index_status.write().await;
+                    error!("Join error in file indexing task: {}", e);
+                    let mut status = state_clone.index_status.write().await;
                     status.is_indexing = false;
                 }
             }

@@ -54,12 +54,23 @@ pub fn show_launcher(window: &WebviewWindow) {
     info!("Launcher opened on active monitor");
 }
 
+/// Hide launcher window and trim working set memory.
+pub fn hide_launcher(window: &WebviewWindow) {
+    let _ = window.hide();
+
+    #[cfg(windows)]
+    unsafe {
+        use windows::Win32::System::Threading::{GetCurrentProcess, SetProcessWorkingSetSize};
+        let _ = SetProcessWorkingSetSize(GetCurrentProcess(), usize::MAX, usize::MAX);
+    }
+}
+
 /// Toggle launcher window visibility.
 pub fn toggle_launcher(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         match window.is_visible() {
             Ok(true) => {
-                let _ = window.hide();
+                hide_launcher(&window);
             }
             Ok(false) => {
                 show_launcher(&window);

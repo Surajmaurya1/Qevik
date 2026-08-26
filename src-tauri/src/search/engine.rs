@@ -127,13 +127,23 @@ impl SearchEngine {
                     candidates.push(calc);
                 }
 
-                // 2. Apps, files, folders from SQLite
+                // 2. Apps from fast in-memory cache
+                {
+                    let cache = state.app_cache.read().await;
+                    if !cache.is_empty() {
+                        let mut cached_apps = AppsProvider::search_cache(&cache, &q, 25);
+                        candidates.append(&mut cached_apps);
+                    } else {
+                        let db = state.db.lock().await;
+                        if let Ok(mut apps) = AppsProvider::search(&db, &q, 25) {
+                            candidates.append(&mut apps);
+                        }
+                    }
+                }
+
+                // 3. Files & Folders from SQLite
                 {
                     let db = state.db.lock().await;
-
-                    if let Ok(mut apps) = AppsProvider::search(&db, &q, 25) {
-                        candidates.append(&mut apps);
-                    }
 
                     if let Ok(mut files) = FilesProvider::search(&db, &q, 25) {
                         candidates.append(&mut files);
