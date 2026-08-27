@@ -96,11 +96,12 @@ pub fn copy_to_clipboard(text: &str) -> Result<(), String> {
     use windows::Win32::System::DataExchange::{
         CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
     };
-    use windows::Win32::System::Memory::{
-        GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE,
-    };
+    use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
 
-    let wide: Vec<u16> = OsStr::new(text).encode_wide().chain(std::iter::once(0)).collect();
+    let wide: Vec<u16> = OsStr::new(text)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
     let num_bytes = wide.len() * std::mem::size_of::<u16>();
 
     unsafe {
@@ -408,11 +409,9 @@ pub async fn update_settings(
 
     // Re-register hotkey if changed
     if old_hotkey != settings.hotkey {
-        if let Err(e) = crate::hotkey::manager::HotkeyManager::update(
-            &app,
-            &old_hotkey,
-            &settings.hotkey,
-        ) {
+        if let Err(e) =
+            crate::hotkey::manager::HotkeyManager::update(&app, &old_hotkey, &settings.hotkey)
+        {
             error!("Failed to update global hotkey: {}", e);
         }
     }

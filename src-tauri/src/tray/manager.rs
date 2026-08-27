@@ -36,8 +36,11 @@ pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
             }
             "reindex" => {
                 info!("Manual re-index triggered from tray");
-                if let Some(state) = app.try_state::<std::sync::Arc<crate::core::state::AppState>>() {
-                    crate::indexer::manager::IndexManager::start_background_indexing(state.inner().clone());
+                if let Some(state) = app.try_state::<std::sync::Arc<crate::core::state::AppState>>()
+                {
+                    crate::indexer::manager::IndexManager::start_background_indexing(
+                        state.inner().clone(),
+                    );
                 }
             }
             "quit" => {

@@ -11,8 +11,8 @@ pub fn set_autostart(enabled: bool) -> Result<(), String> {
     use windows::core::PCWSTR;
     use windows::Win32::Foundation::ERROR_SUCCESS;
     use windows::Win32::System::Registry::{
-        RegCloseKey, RegDeleteValueW, RegOpenKeyExW, RegSetValueExW, HKEY_CURRENT_USER, KEY_SET_VALUE,
-        REG_SZ,
+        RegCloseKey, RegDeleteValueW, RegOpenKeyExW, RegSetValueExW, HKEY_CURRENT_USER,
+        KEY_SET_VALUE, REG_SZ,
     };
 
     let subkey_wide: Vec<u16> = OsStr::new(RUN_KEY_PATH)
@@ -36,7 +36,10 @@ pub fn set_autostart(enabled: bool) -> Result<(), String> {
         );
 
         if open_status != ERROR_SUCCESS {
-            let msg = format!("Failed to open HKCU Run registry key: error code {:?}", open_status);
+            let msg = format!(
+                "Failed to open HKCU Run registry key: error code {:?}",
+                open_status
+            );
             error!("{}", msg);
             return Err(msg);
         }
@@ -56,7 +59,10 @@ pub fn set_autostart(enabled: bool) -> Result<(), String> {
                 PCWSTR::from_raw(name_wide.as_ptr()),
                 0,
                 REG_SZ,
-                Some(std::slice::from_raw_parts(val_wide.as_ptr() as *const u8, byte_len as usize)),
+                Some(std::slice::from_raw_parts(
+                    val_wide.as_ptr() as *const u8,
+                    byte_len as usize,
+                )),
             );
 
             if status == ERROR_SUCCESS {
@@ -74,7 +80,10 @@ pub fn set_autostart(enabled: bool) -> Result<(), String> {
                 info!("Disabled startup with Windows via registry");
                 Ok(())
             } else {
-                let msg = format!("Failed to delete Run registry value: error code {:?}", status);
+                let msg = format!(
+                    "Failed to delete Run registry value: error code {:?}",
+                    status
+                );
                 error!("{}", msg);
                 Err(msg)
             }

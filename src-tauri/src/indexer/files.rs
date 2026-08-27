@@ -90,7 +90,10 @@ impl FileIndexer {
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_else(|| file_name.clone());
 
-        let parent = path.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+        let parent = path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
         let file_id = format!("file_{:x}", simple_hash(&path.to_string_lossy()));
 
         Some(FileRecord {
@@ -122,7 +125,10 @@ impl FileIndexer {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs() as i64;
-        let parent = path.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+        let parent = path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
         let folder_id = format!("folder_{:x}", simple_hash(&path.to_string_lossy()));
 
         Some(FolderRecord {

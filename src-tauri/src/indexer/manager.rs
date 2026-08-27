@@ -75,7 +75,10 @@ impl IndexManager {
                     let mut conn = match crate::database::connection::open_connection() {
                         Ok(c) => c,
                         Err(e) => {
-                            tracing::warn!("Initial connection in file indexer failed: {}. Resetting...", e);
+                            tracing::warn!(
+                                "Initial connection in file indexer failed: {}. Resetting...",
+                                e
+                            );
                             crate::database::connection::remove_database_files();
                             crate::database::connection::open_connection()?
                         }

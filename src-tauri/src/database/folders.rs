@@ -16,7 +16,10 @@ pub fn upsert_folders(conn: &mut Connection, folders: &[FolderRecord]) -> AppRes
         Ok(c) => Ok(c),
         Err(e) => {
             let err_str = e.to_string();
-            if err_str.contains("malformed") || err_str.contains("fts") || err_str.contains("disk image") {
+            if err_str.contains("malformed")
+                || err_str.contains("fts")
+                || err_str.contains("disk image")
+            {
                 tracing::warn!("Self-healing folders FTS index due to: {}", err_str);
                 let _ = conn.execute_batch(
                     "DROP TABLE IF EXISTS folders_fts;

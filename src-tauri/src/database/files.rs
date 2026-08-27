@@ -22,7 +22,10 @@ pub fn upsert_files(conn: &mut Connection, files: &[FileRecord]) -> AppResult<us
         Ok(c) => Ok(c),
         Err(e) => {
             let err_str = e.to_string();
-            if err_str.contains("malformed") || err_str.contains("fts") || err_str.contains("disk image") {
+            if err_str.contains("malformed")
+                || err_str.contains("fts")
+                || err_str.contains("disk image")
+            {
                 tracing::warn!("Self-healing files FTS index due to: {}", err_str);
                 let _ = conn.execute_batch(
                     "DROP TABLE IF EXISTS files_fts;

@@ -84,11 +84,8 @@ pub fn get_all_usage(conn: &Connection) -> AppResult<Vec<UsageRecord>> {
         .map_err(|e| AppError::Database(format!("Query get_all_usage error: {}", e)))?;
 
     let mut records = Vec::new();
-    for r in rows {
-        if let Ok(rec) = r {
-            records.push(rec);
-        }
+    for rec in rows.flatten() {
+        records.push(rec);
     }
     Ok(records)
 }
-

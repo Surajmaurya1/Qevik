@@ -25,7 +25,10 @@ pub fn open_connection() -> AppResult<Connection> {
     match try_open_connection() {
         Ok(conn) => Ok(conn),
         Err(e) => {
-            error!("Failed to open SQLite connection ({}). Performing auto-recovery...", e);
+            error!(
+                "Failed to open SQLite connection ({}). Performing auto-recovery...",
+                e
+            );
             remove_database_files();
             try_open_connection()
         }
@@ -43,7 +46,10 @@ fn try_open_connection() -> AppResult<Connection> {
     let check: Result<String, _> = conn.query_row("PRAGMA quick_check(1);", [], |row| row.get(0));
     if let Ok(res) = check {
         if res.to_lowercase() != "ok" {
-            return Err(AppError::Database(format!("Integrity check failed: {}", res)));
+            return Err(AppError::Database(format!(
+                "Integrity check failed: {}",
+                res
+            )));
         }
     }
 

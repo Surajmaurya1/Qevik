@@ -77,11 +77,15 @@ impl FilesystemWatcher {
                         }
 
                         if !files_to_upsert.is_empty() {
-                            let _ = crate::database::files::upsert_files(&mut conn, &files_to_upsert);
+                            let _ =
+                                crate::database::files::upsert_files(&mut conn, &files_to_upsert);
                             debug!("Watcher upserted {} files.", files_to_upsert.len());
                         }
                         if !folders_to_upsert.is_empty() {
-                            let _ = crate::database::folders::upsert_folders(&mut conn, &folders_to_upsert);
+                            let _ = crate::database::folders::upsert_folders(
+                                &mut conn,
+                                &folders_to_upsert,
+                            );
                             debug!("Watcher upserted {} folders.", folders_to_upsert.len());
                         }
                     });
