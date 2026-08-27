@@ -13,11 +13,28 @@
 
 ---
 
-[Features](#key-features) • [Keyboard Shortcuts](#keyboard-shortcuts) • [Architecture](#architecture) • [Benchmarks](#performance-benchmarks) • [Quickstart](#getting-started) • [Contributing](#contributing)
+[Download](#-download--installation) • [Features](#key-features) • [Keyboard Shortcuts](#keyboard-shortcuts) • [Architecture](#architecture) • [Benchmarks](#performance-benchmarks) • [Quickstart](#getting-started) • [Contributing](#contributing)
 
 ---
 
 </div>
+
+## 📥 Download & Installation
+
+### Pre-Built Binaries (Windows 10 & 11)
+
+Get the latest release from the [**GitHub Releases Page**](https://github.com/Surajmaurya1/Qevik/releases/latest):
+
+| Package | Format | Purpose |
+| :--- | :--- | :--- |
+| 🚀 **Standard Installer** | `.exe` (NSIS) | Double-click setup installer with automatic desktop shortcut & start menu entry (Recommended). |
+| 📦 **Enterprise MSI** | `.msi` (WiX) | Standard Windows Installer package for system administrators and enterprise deployment. |
+| ⚡ **Standalone Executable** | `.exe` | Portable binary — run directly without installation. |
+
+> [!TIP]
+> After installation, press **`Alt + Space`** anywhere in Windows to launch the spotlight search bar instantly.
+
+---
 
 ## Overview
 
@@ -176,6 +193,21 @@ cargo fmt --all -- --check                                 # Rust formatting che
 cargo clippy --all-targets --all-features -- -D warnings   # Clippy strict lints
 cargo test --all                                           # Automated unit & integration tests
 ```
+
+### Building for Distribution
+
+To compile and package the production Windows installer (`.exe` / `.msi`):
+
+```powershell
+npm run tauri build
+# Or run the automation script:
+./scripts/build.ps1
+```
+
+Generated installer bundles will be output to:
+- **NSIS Setup Installer (`.exe`)**: `target/release/bundle/nsis/`
+- **MSI Installer (`.msi`)**: `target/release/bundle/msi/`
+- **Standalone Binary**: `target/release/spotlight-for-windows.exe`
 
 ---
 
