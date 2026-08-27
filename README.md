@@ -27,7 +27,12 @@ Windows search is often slow, indexes unwanted directories, or sends search quer
   - Standard Windows system tools (`Notepad`, `Calculator`, `Paint`, `Task Manager`, `cmd`, `PowerShell`)
   - Registry App Paths (`HKLM` and `HKCU`)
 - **Local File & Folder Search**: Full-text searching across common user libraries (Desktop, Documents, Downloads, Pictures, Videos, Music) using SQLite FTS5. Files open in their default Windows apps; folders open directly in File Explorer.
-- **Built-in Calculator**: Type math expressions directly in the search box (e.g. `2 + 2`, `(45 * 12) + 180`, `sqrt(144)`). Pressing `Enter` copies the result to the clipboard.
+- **Built-in Calculator**: Type math expressions directly in the search box (e.g. `2 + 2`, `(45 * 12) + 180`, `25 * 4`). Pressing `Enter` copies the result to the clipboard.
+- **System Commands**: Run Windows system actions quickly using the `>` prefix:
+  - `> lock` — Lock your Windows workstation
+  - `> task manager` — Launch Windows Task Manager
+  - `> recycle bin` — Open the Recycle Bin in File Explorer
+  - `> settings` — Open Windows System Settings
 - **Search Ranking & History**: Automatically ranks frequently and recently opened apps and files higher over time. Empty queries display your recent launches.
 - **Multi-Monitor Awareness**: Automatically centers the search bar on whichever monitor your mouse cursor is currently active on.
 - **System Tray Integration**: Runs quietly in the background with a system tray menu to toggle visibility, open settings, or exit.
