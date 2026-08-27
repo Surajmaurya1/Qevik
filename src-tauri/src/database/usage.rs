@@ -63,3 +63,32 @@ pub fn get_usage(
         Ok(None)
     }
 }
+
+pub fn get_all_usage(conn: &Connection) -> AppResult<Vec<UsageRecord>> {
+    let mut stmt = conn
+        .prepare_cached(
+            "SELECT result_id, result_type, launch_count, last_launched_at
+             FROM usage;",
+        )
+        .map_err(|e| AppError::Database(format!("Prepare get_all_usage error: {}", e)))?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(UsageRecord {
+                result_id: row.get(0)?,
+                result_type: row.get(1)?,
+                launch_count: row.get(2)?,
+                last_launched_at: row.get(3)?,
+            })
+        })
+        .map_err(|e| AppError::Database(format!("Query get_all_usage error: {}", e)))?;
+
+    let mut records = Vec::new();
+    for r in rows {
+        if let Ok(rec) = r {
+            records.push(rec);
+        }
+    }
+    Ok(records)
+}
+

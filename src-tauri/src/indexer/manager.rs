@@ -60,22 +60,52 @@ impl IndexManager {
             // Phase 2: Staggered File & Folder Indexing (delayed by 2 seconds so startup is 100% instant)
             tokio::time::sleep(Duration::from_millis(2000)).await;
 
+            let custom_dirs = {
+                let s = state_clone.settings.read().await;
+                s.indexed_directories.clone()
+            };
+
             let state_for_watcher = state_clone.clone();
             let files_result =
                 tauri::async_runtime::spawn_blocking(move || -> AppResult<(usize, usize, i64)> {
-                    let file_result = FileIndexer::scan_default_directories()?;
+                    let file_result = FileIndexer::scan_all_directories(&custom_dirs)?;
                     let file_count = file_result.files.len();
                     let folder_count = file_result.folders.len();
 
-                    let mut conn = crate::database::connection::open_connection()?;
-                    crate::database::migrations::run_migrations(&mut conn)?;
+                    let mut conn = match crate::database::connection::open_connection() {
+                        Ok(c) => c,
+                        Err(e) => {
+                            tracing::warn!("Initial connection in file indexer failed: {}. Resetting...", e);
+                            crate::database::connection::remove_database_files();
+                            crate::database::connection::open_connection()?
+                        }
+                    };
 
-                    upsert_files(&mut conn, &file_result.files)?;
-                    upsert_folders(&mut conn, &file_result.folders)?;
+                    if let Err(e) = crate::database::migrations::run_migrations(&mut conn) {
+                        tracing::warn!("Migrations failed in file indexer: {}. Resetting DB...", e);
+                        drop(conn);
+                        crate::database::connection::remove_database_files();
+                        let mut fresh_conn = crate::database::connection::open_connection()?;
+                        crate::database::migrations::run_migrations(&mut fresh_conn)?;
+                        conn = fresh_conn;
+                    }
+
+                    if let Err(e) = upsert_files(&mut conn, &file_result.files) {
+                        tracing::warn!("upsert_files failed: {}. Retrying with fresh DB...", e);
+                        drop(conn);
+                        crate::database::connection::remove_database_files();
+                        let mut fresh_conn = crate::database::connection::open_connection()?;
+                        crate::database::migrations::run_migrations(&mut fresh_conn)?;
+                        upsert_files(&mut fresh_conn, &file_result.files)?;
+                        upsert_folders(&mut fresh_conn, &file_result.folders)?;
+                        conn = fresh_conn;
+                    } else {
+                        let _ = upsert_folders(&mut conn, &file_result.folders);
+                    }
 
                     let _ = conn.execute_batch(
                         "INSERT INTO files_fts(files_fts) VALUES('rebuild');
-                     INSERT INTO folders_fts(folders_fts) VALUES('rebuild');",
+                         INSERT INTO folders_fts(folders_fts) VALUES('rebuild');",
                     );
 
                     let now = SystemTime::now()

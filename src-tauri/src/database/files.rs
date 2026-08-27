@@ -18,6 +18,28 @@ pub struct FileRecord {
 }
 
 pub fn upsert_files(conn: &mut Connection, files: &[FileRecord]) -> AppResult<usize> {
+    match execute_upsert_files(conn, files) {
+        Ok(c) => Ok(c),
+        Err(e) => {
+            let err_str = e.to_string();
+            if err_str.contains("malformed") || err_str.contains("fts") || err_str.contains("disk image") {
+                tracing::warn!("Self-healing files FTS index due to: {}", err_str);
+                let _ = conn.execute_batch(
+                    "DROP TABLE IF EXISTS files_fts;
+                     CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(
+                         name, display_name, path, content='files', content_rowid='rowid'
+                     );
+                     INSERT INTO files_fts(files_fts) VALUES('rebuild');",
+                );
+                execute_upsert_files(conn, files)
+            } else {
+                Err(e)
+            }
+        }
+    }
+}
+
+fn execute_upsert_files(conn: &mut Connection, files: &[FileRecord]) -> AppResult<usize> {
     let tx = conn
         .transaction()
         .map_err(|e| AppError::Database(format!("Transaction start error: {}", e)))?;

@@ -12,7 +12,7 @@ pub struct FilesystemWatcher;
 
 impl FilesystemWatcher {
     /// Starts watching the default user directories on a dedicated background thread.
-    pub fn start_watching(state: Arc<AppState>) {
+    pub fn start_watching(_state: Arc<AppState>) {
         std::thread::spawn(move || {
             let (tx, rx) = std::sync::mpsc::channel();
 
@@ -49,14 +49,40 @@ impl FilesystemWatcher {
                     let paths_to_process: Vec<PathBuf> = batch_queue.drain().collect();
                     last_flush = std::time::Instant::now();
 
-                    let state_clone = state.clone();
                     tauri::async_runtime::spawn(async move {
-                        let db = state_clone.db.lock().await;
+                        let mut conn = match crate::database::connection::open_connection() {
+                            Ok(c) => c,
+                            Err(e) => {
+                                error!("Watcher failed to open DB connection: {}", e);
+                                return;
+                            }
+                        };
+
+                        let mut files_to_upsert = Vec::new();
+                        let mut folders_to_upsert = Vec::new();
+
                         for path in paths_to_process {
                             if !path.exists() {
-                                let _ = delete_file_by_path(&db, &path.to_string_lossy());
+                                let _ = delete_file_by_path(&conn, &path.to_string_lossy());
                                 debug!("Watcher processed deletion: {:?}", path);
+                            } else if path.is_file() {
+                                if let Some(rec) = FileIndexer::inspect_file(&path) {
+                                    files_to_upsert.push(rec);
+                                }
+                            } else if path.is_dir() {
+                                if let Some(rec) = FileIndexer::inspect_folder(&path) {
+                                    folders_to_upsert.push(rec);
+                                }
                             }
+                        }
+
+                        if !files_to_upsert.is_empty() {
+                            let _ = crate::database::files::upsert_files(&mut conn, &files_to_upsert);
+                            debug!("Watcher upserted {} files.", files_to_upsert.len());
+                        }
+                        if !folders_to_upsert.is_empty() {
+                            let _ = crate::database::folders::upsert_folders(&mut conn, &folders_to_upsert);
+                            debug!("Watcher upserted {} folders.", folders_to_upsert.len());
                         }
                     });
                 }

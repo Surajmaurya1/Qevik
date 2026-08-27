@@ -1,5 +1,4 @@
 use crate::core::state::AppState;
-use crate::database::usage::UsageRecord;
 use crate::error::AppResult;
 use crate::search::parser::{QueryMode, QueryParser};
 use crate::search::providers::apps::AppsProvider;
@@ -166,8 +165,20 @@ impl SearchEngine {
                     }
                 }
 
-                // 5. Ranking
-                let usage_map = HashMap::<String, UsageRecord>::new();
+                // 5. Ranking with frecency usage records
+                let usage_map = {
+                    let db = state.db.lock().await;
+                    match crate::database::usage::get_all_usage(&db) {
+                        Ok(records) => {
+                            let mut map = HashMap::new();
+                            for r in records {
+                                map.insert(r.result_id.clone(), r);
+                            }
+                            map
+                        }
+                        Err(_) => HashMap::new(),
+                    }
+                };
                 let ranked = Ranker::rank_all(candidates, &q, &usage_map, max_results);
 
                 Ok(ranked)

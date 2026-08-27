@@ -12,6 +12,28 @@ pub struct FolderRecord {
 }
 
 pub fn upsert_folders(conn: &mut Connection, folders: &[FolderRecord]) -> AppResult<usize> {
+    match execute_upsert_folders(conn, folders) {
+        Ok(c) => Ok(c),
+        Err(e) => {
+            let err_str = e.to_string();
+            if err_str.contains("malformed") || err_str.contains("fts") || err_str.contains("disk image") {
+                tracing::warn!("Self-healing folders FTS index due to: {}", err_str);
+                let _ = conn.execute_batch(
+                    "DROP TABLE IF EXISTS folders_fts;
+                     CREATE VIRTUAL TABLE IF NOT EXISTS folders_fts USING fts5(
+                         name, path, content='folders', content_rowid='rowid'
+                     );
+                     INSERT INTO folders_fts(folders_fts) VALUES('rebuild');",
+                );
+                execute_upsert_folders(conn, folders)
+            } else {
+                Err(e)
+            }
+        }
+    }
+}
+
+fn execute_upsert_folders(conn: &mut Connection, folders: &[FolderRecord]) -> AppResult<usize> {
     let tx = conn
         .transaction()
         .map_err(|e| AppError::Database(format!("Transaction start error: {}", e)))?;

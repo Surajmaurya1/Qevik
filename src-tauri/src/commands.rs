@@ -89,6 +89,66 @@ pub async fn search(
 }
 
 #[cfg(windows)]
+pub fn copy_to_clipboard(text: &str) -> Result<(), String> {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::System::DataExchange::{
+        CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
+    };
+    use windows::Win32::System::Memory::{
+        GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE,
+    };
+
+    let wide: Vec<u16> = OsStr::new(text).encode_wide().chain(std::iter::once(0)).collect();
+    let num_bytes = wide.len() * std::mem::size_of::<u16>();
+
+    unsafe {
+        if OpenClipboard(None).is_err() {
+            return Err("Failed to open clipboard".into());
+        }
+        let _ = EmptyClipboard();
+
+        let h_mem = match GlobalAlloc(GMEM_MOVEABLE, num_bytes) {
+            Ok(h) => h,
+            Err(_) => {
+                let _ = CloseClipboard();
+                return Err("Failed to allocate global memory for clipboard".into());
+            }
+        };
+
+        let ptr = GlobalLock(h_mem);
+        if ptr.is_null() {
+            let _ = CloseClipboard();
+            return Err("Failed to lock global memory".into());
+        }
+
+        std::ptr::copy_nonoverlapping(wide.as_ptr() as *const u8, ptr as *mut u8, num_bytes);
+        let _ = GlobalUnlock(h_mem);
+
+        // CF_UNICODETEXT is 13
+        let set_res = SetClipboardData(13, HANDLE(h_mem.0));
+        let _ = CloseClipboard();
+
+        if set_res.is_err() {
+            return Err("Failed to set clipboard data".into());
+        }
+
+        Ok(())
+    }
+}
+
+fn get_builtin_command_target(id: &str) -> Option<(&'static str, Option<&'static str>)> {
+    match id {
+        "cmd_lock" => Some(("rundll32.exe", Some("user32.dll,LockWorkStation"))),
+        "cmd_taskmgr" => Some(("taskmgr.exe", None)),
+        "cmd_recycle" => Some(("explorer.exe", Some("shell:RecycleBinFolder"))),
+        "cmd_settings" => Some(("ms-settings:", None)),
+        _ => None,
+    }
+}
+
+#[cfg(windows)]
 fn execute_target(
     target_path: &str,
     arguments: Option<&str>,
@@ -136,7 +196,7 @@ fn execute_target(
         }
     }
 
-    // Fallback handlers if ShellExecute returns error code <= 32
+    // Safe fallback handlers without cmd.exe /C shell interpretation
     if is_folder || std::path::Path::new(target_path).is_dir() {
         let mut cmd = std::process::Command::new("explorer.exe");
         cmd.arg(target_path);
@@ -147,21 +207,22 @@ fn execute_target(
     }
 
     if is_web {
-        let mut cmd = std::process::Command::new("cmd.exe");
-        cmd.args(["/C", "start", "", target_path]);
+        let mut cmd = std::process::Command::new("explorer.exe");
+        cmd.arg(target_path);
         if let Err(e) = cmd.spawn() {
             return Err(format!("Failed to open URL: {}", e));
         }
         return Ok(());
     }
 
-    let mut cmd = std::process::Command::new("cmd.exe");
-    cmd.args(["/C", "start", "", target_path]);
+    let mut cmd = std::process::Command::new(target_path);
     if let Some(args) = arguments {
-        cmd.arg(args);
+        for arg in args.split_whitespace() {
+            cmd.arg(arg);
+        }
     }
     if let Err(e) = cmd.spawn() {
-        return Err(format!("Failed to launch file/app: {}", e));
+        return Err(format!("Failed to launch target {}: {}", target_path, e));
     }
 
     Ok(())
@@ -181,14 +242,50 @@ pub async fn launch(
         crate::windows::window::hide_launcher(&window);
     }
 
+    if result_type == "calculator" {
+        let val_to_copy = if let Some(stripped) = id.strip_prefix("calc:") {
+            stripped
+        } else {
+            &id
+        };
+
+        #[cfg(windows)]
+        {
+            if let Err(e) = copy_to_clipboard(val_to_copy) {
+                error!("Failed to copy calculator result: {}", e);
+                return Ok(LaunchResponseDto {
+                    success: false,
+                    error: Some(e),
+                });
+            }
+            info!("Calculator result copied to clipboard: {}", val_to_copy);
+        }
+        return Ok(LaunchResponseDto {
+            success: true,
+            error: None,
+        });
+    }
+
     let mut target_path = id.clone();
     let mut display_name = id.clone();
     let mut arguments: Option<String> = None;
     let is_folder = result_type == "folder";
     let is_web = result_type == "web";
 
-    // Resolve target path and display name from DB
-    {
+    // Resolve target path and display name
+    if result_type == "command" {
+        if let Some((cmd_target, cmd_args)) = get_builtin_command_target(&id) {
+            target_path = cmd_target.to_string();
+            arguments = cmd_args.map(|s| s.to_string());
+            display_name = match id.as_str() {
+                "cmd_lock" => "Lock Screen".into(),
+                "cmd_taskmgr" => "Task Manager".into(),
+                "cmd_recycle" => "Recycle Bin".into(),
+                "cmd_settings" => "Windows Settings".into(),
+                _ => id.clone(),
+            };
+        }
+    } else {
         let db = state.db.lock().await;
 
         match result_type.as_str() {
@@ -230,8 +327,11 @@ pub async fn launch(
             }
             _ => {}
         }
+    }
 
-        // Record usage in DB with human-readable display name
+    // Record usage in DB with human-readable display name
+    {
+        let db = state.db.lock().await;
         let _ = crate::database::usage::increment_usage(&db, &id, &result_type);
         let _ = crate::database::history::record_launch_history(
             &db,
@@ -282,14 +382,53 @@ pub async fn get_settings(state: State<'_, Arc<AppState>>) -> Result<AppSettings
 #[tauri::command]
 pub async fn update_settings(
     settings: AppSettings,
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
 ) -> Result<bool, String> {
+    let (old_hotkey, old_indexed_dirs, old_autostart) = {
+        let current = state.settings.read().await;
+        (
+            current.hotkey.clone(),
+            current.indexed_directories.clone(),
+            current.start_with_windows,
+        )
+    };
+
+    // Update in-memory state
     {
         let mut current = state.settings.write().await;
         *current = settings.clone();
     }
-    let db = state.db.lock().await;
-    let _ = crate::database::settings::save_settings_to_db(&db, &settings);
+
+    // Persist to database
+    {
+        let db = state.db.lock().await;
+        let _ = crate::database::settings::save_settings_to_db(&db, &settings);
+    }
+
+    // Re-register hotkey if changed
+    if old_hotkey != settings.hotkey {
+        if let Err(e) = crate::hotkey::manager::HotkeyManager::update(
+            &app,
+            &old_hotkey,
+            &settings.hotkey,
+        ) {
+            error!("Failed to update global hotkey: {}", e);
+        }
+    }
+
+    // Sync Windows autostart registry key if changed
+    if old_autostart != settings.start_with_windows {
+        if let Err(e) = crate::core::autostart::set_autostart(settings.start_with_windows) {
+            error!("Failed to update Windows autostart registry: {}", e);
+        }
+    }
+
+    // Re-index if custom directories were modified
+    if old_indexed_dirs != settings.indexed_directories {
+        crate::indexer::manager::IndexManager::start_background_indexing(state.inner().clone());
+    }
+
     Ok(true)
 }
 

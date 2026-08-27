@@ -10,15 +10,18 @@ impl CalculatorProvider {
         }
 
         match evalexpr::eval(cleaned) {
-            Ok(value) => Some(SearchCandidate {
-                id: "calc_eval".into(),
-                result_type: ResultType::Calculator,
-                display_name: value.to_string(),
-                subtitle: format!("= {}", cleaned),
-                target_path: value.to_string(),
-                icon_id: None,
-                base_score: 2.0,
-            }),
+            Ok(value) => {
+                let val_str = value.to_string();
+                Some(SearchCandidate {
+                    id: format!("calc:{}", val_str),
+                    result_type: ResultType::Calculator,
+                    display_name: val_str.clone(),
+                    subtitle: format!("= {} (Press Enter to copy)", cleaned),
+                    target_path: val_str,
+                    icon_id: None,
+                    base_score: 2.0,
+                })
+            }
             Err(_) => None,
         }
     }

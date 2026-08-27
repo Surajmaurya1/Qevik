@@ -4,10 +4,12 @@ use tracing::info;
 pub fn on_app_ready(app: &AppHandle, is_startup: bool) {
     info!("Spotlight core initialized. is_startup: {}", is_startup);
 
-    // If not started in background --startup mode, we can optionally keep window hidden until hotkey
     if let Some(window) = app.get_webview_window("main") {
         if !is_startup {
-            // Keep window hidden initially; hotkey will show it
+            // Show launcher window on manual startup
+            crate::windows::window::show_launcher(&window);
+        } else {
+            // Keep window hidden in background on Windows autostart
             let _ = window.hide();
         }
     }

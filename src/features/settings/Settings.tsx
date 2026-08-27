@@ -10,6 +10,7 @@ interface SettingsProps {
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const { settings, setTheme, saveSettings } = useSettingsStore();
   const [hotkey, setHotkey] = useState(settings.hotkey);
+  const [startWithWindows, setStartWithWindows] = useState(settings.start_with_windows);
   const [maxResults, setMaxResults] = useState(settings.max_results);
   const [enableCalc, setEnableCalc] = useState(settings.enable_calculator);
   const [enableWeb, setEnableWeb] = useState(settings.enable_web_search);
@@ -19,6 +20,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     await saveSettings({
       ...settings,
       hotkey,
+      start_with_windows: startWithWindows,
       max_results: maxResults,
       enable_calculator: enableCalc,
       enable_web_search: enableWeb,
@@ -72,10 +74,10 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           </div>
         </section>
 
-        {/* Global Hotkey */}
+        {/* Global Hotkey & Startup */}
         <section className="settings-section">
           <h3>
-            <Keyboard size={16} /> Shortcut Activation
+            <Keyboard size={16} /> Activation & System
           </h3>
           <div className="setting-row">
             <label htmlFor="hotkey-input">Global Hotkey</label>
@@ -88,6 +90,17 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 setHotkey(e.target.value);
               }}
               placeholder="e.g. Alt+Space"
+            />
+          </div>
+          <div className="setting-toggle-row">
+            <label htmlFor="autostart-toggle">Start with Windows (Boot in background)</label>
+            <input
+              id="autostart-toggle"
+              type="checkbox"
+              checked={startWithWindows}
+              onChange={(e) => {
+                setStartWithWindows(e.target.checked);
+              }}
             />
           </div>
         </section>

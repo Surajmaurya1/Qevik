@@ -53,7 +53,15 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> AppResult<Self> {
         let mut conn = crate::database::connection::open_connection()?;
-        crate::database::migrations::run_migrations(&mut conn)?;
+        
+        if let Err(e) = crate::database::migrations::run_migrations(&mut conn) {
+            tracing::warn!("Migration failed on initial connection: {}. Recreating database...", e);
+            drop(conn);
+            crate::database::connection::remove_database_files();
+            let mut fresh_conn = crate::database::connection::open_connection()?;
+            crate::database::migrations::run_migrations(&mut fresh_conn)?;
+            conn = fresh_conn;
+        }
 
         // Load settings from database if previously saved
         let initial_settings =

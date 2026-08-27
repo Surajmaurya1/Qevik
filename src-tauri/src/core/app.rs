@@ -20,6 +20,11 @@ pub fn create_app() -> tauri::Builder<tauri::Wry> {
         }))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Focused(false) = event {
+                let _ = window.hide();
+            }
+        })
         .setup(|app| {
             setup_app(app)?;
             Ok(())

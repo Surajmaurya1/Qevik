@@ -16,7 +16,7 @@ impl WebProvider {
         };
 
         Some(SearchCandidate {
-            id: "web_search".into(),
+            id: url.clone(),
             result_type: ResultType::Web,
             display_name: format!("Search web for '{}'", trimmed),
             subtitle: url.clone(),

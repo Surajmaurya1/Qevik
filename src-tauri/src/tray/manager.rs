@@ -28,9 +28,17 @@ pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
             }
             "settings" => {
                 info!("Settings requested from tray");
+                if let Some(window) = app.get_webview_window("main") {
+                    use tauri::Emitter;
+                    crate::windows::window::show_launcher(&window);
+                    let _ = window.emit("open-settings", ());
+                }
             }
             "reindex" => {
                 info!("Manual re-index triggered from tray");
+                if let Some(state) = app.try_state::<std::sync::Arc<crate::core::state::AppState>>() {
+                    crate::indexer::manager::IndexManager::start_background_indexing(state.inner().clone());
+                }
             }
             "quit" => {
                 crate::core::lifecycle::graceful_shutdown(app);

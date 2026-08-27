@@ -27,8 +27,13 @@ pub fn position_window_on_active_monitor(window: &WebviewWindow) {
                 let monitor_width = rc_work.right - rc_work.left;
                 let monitor_height = rc_work.bottom - rc_work.top;
 
-                let window_width = 640;
-                let window_height = 480;
+                let (window_width, window_height) = if let Ok(size) = window.outer_size() {
+                    (size.width as i32, size.height as i32)
+                } else if let Ok(scale) = window.scale_factor() {
+                    ((640.0 * scale) as i32, (480.0 * scale) as i32)
+                } else {
+                    (640, 480)
+                };
 
                 // Center horizontally, position in top-third vertically
                 let x = rc_work.left + (monitor_width - window_width) / 2;

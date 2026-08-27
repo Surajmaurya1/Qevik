@@ -1,6 +1,7 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { Launcher } from './features/launcher/Launcher';
 import { useSettingsStore } from './stores/settingsStore';
+import { listen } from '@tauri-apps/api/event';
 
 const Settings = lazy(() => import('./features/settings/Settings'));
 const Onboarding = lazy(() => import('./features/onboarding/Onboarding'));
@@ -16,6 +17,21 @@ export const App: React.FC = () => {
     if (!completed) {
       setShowOnboarding(true);
     }
+
+    let unlisten: (() => void) | null = null;
+    if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+      void listen('open-settings', () => {
+        setShowSettings(true);
+      }).then((un) => {
+        unlisten = un;
+      });
+    }
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
   }, [loadSettings]);
 
   if (showOnboarding) {
