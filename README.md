@@ -25,11 +25,11 @@
 
 Get the latest release from the [**GitHub Releases Page**](https://github.com/Surajmaurya1/Qevik/releases/latest):
 
-| Package | Format | Purpose |
-| :--- | :--- | :--- |
-| 🚀 **Standard Installer** | `.exe` (NSIS) | Double-click setup installer with automatic desktop shortcut & start menu entry (Recommended). |
-| 📦 **Enterprise MSI** | `.msi` (WiX) | Standard Windows Installer package for system administrators and enterprise deployment. |
-| ⚡ **Standalone Executable** | `.exe` | Portable binary — run directly without installation. |
+| Package                      | Format        | Purpose                                                                                        |
+| :--------------------------- | :------------ | :--------------------------------------------------------------------------------------------- |
+| 🚀 **Standard Installer**    | `.exe` (NSIS) | Double-click setup installer with automatic desktop shortcut & start menu entry (Recommended). |
+| 📦 **Enterprise MSI**        | `.msi` (WiX)  | Standard Windows Installer package for system administrators and enterprise deployment.        |
+| ⚡ **Standalone Executable** | `.exe`        | Portable binary — run directly without installation.                                           |
 
 > [!TIP]
 > After installation, press **`Alt + Space`** anywhere in Windows to launch the spotlight search bar instantly.
@@ -205,6 +205,7 @@ npm run tauri build
 ```
 
 Generated installer bundles will be output to:
+
 - **NSIS Setup Installer (`.exe`)**: `target/release/bundle/nsis/`
 - **MSI Installer (`.msi`)**: `target/release/bundle/msi/`
 - **Standalone Binary**: `target/release/spotlight-for-windows.exe`
